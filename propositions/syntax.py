@@ -110,7 +110,12 @@ class Formula:
             The standard string representation of the current formula.
         """
         # Task 1.1
-
+        if is_variable(self.root) or is_constant(self.root):
+            return self.root
+        elif is_unary(self.root):
+            return self.root + str(self.first)
+        else:
+            return '(' + str(self.first) + self.root + str(self.second) + ')'
     def __eq__(self, other: object) -> bool:
         """Compares the current formula with the given one.
 
@@ -146,6 +151,14 @@ class Formula:
             A set of all variable names used in the current formula.
         """
         # Task 1.2
+        if is_variable(self.root):
+            return {self.root}
+        elif is_constant(self.root):
+            return set()
+        elif is_unary(self.root):
+            return self.first.variables()
+        else:
+            return self.first.variables().union(self.second.variables())
 
     @memoized_parameterless_method
     def operators(self) -> Set[str]:
@@ -156,6 +169,14 @@ class Formula:
             current formula.
         """
         # Task 1.3
+        if is_variable(self.root):
+            return set()
+        elif is_constant(self.root):
+            return {self.root}
+        elif is_unary(self.root):
+            return {self.root}.union(self.first.operators())
+        else:
+            return {self.root}.union(self.first.operators()).union(self.second.operators())
         
     @staticmethod
     def _parse_prefix(string: str) -> Tuple[Union[Formula, None], str]:
@@ -175,7 +196,64 @@ class Formula:
             is a string with some human-readable content.
         """
         # Task 1.4
+        string = string.lstrip()
+        
+        if not string:
+            return None, "Empty string"
+        
+        if len(string) > 0 and 'p' <= string[0] <= 'z':
+            i = 1
+            while i < len(string) and string[i].isdigit():
+                i += 1
+            var_name = string[:i]
+            if is_variable(var_name):
+                return Formula(var_name), string[i:]
+        
+        if string[0] == 'T':
+            return Formula('T'), string[1:]
+        if string[0] == 'F':
+            return Formula('F'), string[1:]
+        if string[0] == '~':
+            formula, rest = Formula._parse_prefix(string[1:])
+            if formula is None:
+                return None, rest
+            return Formula('~', formula), rest
+        
+        if string[0] == '(':
+            first, rest = Formula._parse_prefix(string[1:])
+            if first is None:
+                return None, rest
+            rest = rest.lstrip()
+            if rest.startswith('->'):
+                op = '->'
+                rest = rest[2:]
+            elif rest and rest[0] in ('&', '|'):
+                op = rest[0]
+                rest = rest[1:]
+            else:
+                if len(rest) > 10:
+                    return None, f"Expected operator, got '{rest[:10]}'"
+                else:
+                    return None, f"Expected operator, got '{rest}'"
+            rest = rest.lstrip()
+            second, rest = Formula._parse_prefix(rest)
+            if second is None:
+                return None, rest
+            
+            rest = rest.lstrip()
+            if not rest.startswith(')'):
+                if len(rest) > 10:
+                    return None, f"Expected ')', got '{rest[:10]}'"
+                else:
+                    return None, f"Expected ')', got '{rest}'"
+            
+            return Formula(op, first, second), rest[1:]
 
+        if len(string) > 10:
+            return None, f"Invalid formula: {string[:10]}..."
+        else:
+            return None, f"Invalid formula: {string}"
+        
     @staticmethod
     def is_formula(string: str) -> bool:
         """Checks if the given string is a valid representation of a formula.
@@ -188,6 +266,8 @@ class Formula:
             representation of a formula, ``False`` otherwise.
         """
         # Task 1.5
+        formula, remainder = Formula._parse_prefix(string)
+        return formula is not None and remainder == ''
         
     @staticmethod
     def parse(string: str) -> Formula:
@@ -201,6 +281,9 @@ class Formula:
         """
         assert Formula.is_formula(string)
         # Task 1.6
+        formula, remainder = Formula._parse_prefix(string)
+        assert formula is not None and remainder == ''
+        return formula
 
     def polish(self) -> str:
         """Computes the polish notation representation of the current formula.

@@ -1,0 +1,45 @@
+
+Testing parsing prefix of 
+... _parse_prefix correctly returned error message: Empty string
+Testing parsing prefix of x
+Testing parsing prefix of T
+Testing parsing prefix of a
+... _parse_prefix correctly returned error message: Invalid formula: a
+Testing parsing prefix of )
+... _parse_prefix correctly returned error message: Invalid formula: )
+Testing parsing prefix of x&
+Testing parsing prefix of p3&y
+Testing parsing prefix of F)
+Testing parsing prefix of ~x
+Testing parsing prefix of ~
+... _parse_prefix correctly returned error message: Empty string
+Testing parsing prefix of x2
+Testing parsing prefix of x|y
+Testing parsing prefix of (p|x13)
+Testing parsing prefix of ((p|x13))
+... _parse_prefix correctly returned error message: Expected operator, got ')'
+Testing parsing prefix of x13->x14
+Testing parsing prefix of (x13->x14)
+Testing parsing prefix of (x&y
+... _parse_prefix correctly returned error message: Expected ')', got ''
+Testing parsing prefix of (T)
+... _parse_prefix correctly returned error message: Expected operator, got ')'
+Testing parsing prefix of (x&&y)
+... _parse_prefix correctly returned error message: Invalid formula: &y)
+Testing parsing prefix of -|x
+... _parse_prefix correctly returned error message: Invalid formula: -|x
+Testing parsing prefix of -->
+... _parse_prefix correctly returned error message: Invalid formula: -->
+Testing parsing prefix of (q~p)
+... _parse_prefix correctly returned error message: Expected operator, got '~p)'
+Testing parsing prefix of (~F)
+... _parse_prefix correctly returned error message: Expected operator, got ')'
+Testing parsing prefix of (r&(y|(z->w)))
+Testing parsing prefix of ~~~x~~
+Testing parsing prefix of (((~T->s45)&s45)|~y)
+Testing parsing prefix of ((p->q)->(~q->~p))->T)
+Testing parsing prefix of ((p->q)->(~q->~p)->T)
+... _parse_prefix correctly returned error message: Expected ')', got '->T)'
+Testing parsing prefix of (x|y|z)
+... _parse_prefix correctly returned error message: Expected ')', got '|z)'
+Testing parsing prefix of ~((~x17->p)&~~(~F|~p))
