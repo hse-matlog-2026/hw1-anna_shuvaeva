@@ -303,18 +303,74 @@ class Formula:
             The polish notation representation of the current formula.
         """
         # Optional Task 1.7
+        if is_variable(self.root):
+            return self.root
+        elif is_constant(self.root):
+            return self.root
+        elif is_unary(self.root):
+            return self.root + self.first.polish()
+        else: 
+            return self.root + self.first.polish() + self.second.polish()
 
     @staticmethod
     def parse_polish(string: str) -> Formula:
-        """Parses the given polish notation representation into a formula.
+        
+        def parse_helper(s, start):
+            if start >= len(s):
+                raise ValueError("Unexpected end of string")
+            
+        
+            if start + 2 <= len(s) and s[start:start+2] == '->':
+                op_len = 2
+            elif start + 3 <= len(s) and s[start:start+3] == '<->':
+                op_len = 3
+            elif start + 2 <= len(s) and s[start:start+2] == '-&':
+                op_len = 2
+            elif start + 2 <= len(s) and s[start:start+2] == '-|':
+                op_len = 2
+            else:
+                op_len = 1
+            
 
-        Parameters:
-            string: string to parse.
-
-        Returns:
-            A formula whose polish notation representation is the given string.
-        """
-        # Optional Task 1.8
+            if op_len > 1:
+                op = s[start:start+op_len]
+                if is_binary(op):
+                    first, pos1 = parse_helper(s, start + op_len)
+                    second, pos2 = parse_helper(s, pos1)
+                    return Formula(op, first, second), pos2
+            
+            first_char = s[start]
+            
+            if is_variable(first_char):
+                i = start + 1
+                while i < len(s) and s[i].isdigit():
+                    i += 1
+                return Formula(s[start:i]), i
+            
+           
+            if is_constant(first_char):
+                return Formula(first_char), start + 1
+            
+           
+            if is_unary(first_char):
+                subformula, pos = parse_helper(s, start + 1)
+                return Formula(first_char, subformula), pos
+            
+           
+            if is_binary(first_char):
+                first, pos1 = parse_helper(s, start + 1)
+                second, pos2 = parse_helper(s, pos1)
+                return Formula(first_char, first, second), pos2
+            
+            raise ValueError(f"Invalid polish notation at position {start}: '{s[start:]}'")
+        
+        try:
+            formula, pos = parse_helper(string, 0)
+            if pos != len(string):
+                raise ValueError(f"Extra characters at end: '{string[pos:]}'")
+            return formula
+        except ValueError as e:
+            raise ValueError(f"Invalid polish notation: {e}")
 
     def substitute_variables(self, substitution_map: Mapping[str, Formula]) -> \
             Formula:
