@@ -1,6 +1,5 @@
-"""Semantic analysis of propositional formulas."""
-
 from __future__ import annotations
+from propositions.proofs import InferenceRule
 from typing import Mapping, Sequence, List, Iterable
 
 from typing import Mapping, Sequence, List
@@ -217,3 +216,17 @@ def synthesize(variables: Sequence[str], values: Iterable[bool]) -> Formula:
         result = Formula('|', result, formula)
     
     return result
+
+def evaluate_inference(rule: InferenceRule, model: Model) -> bool:
+    for assumption in rule.assumptions:
+        if not evaluate(assumption, model):
+            return True 
+    return evaluate(rule.conclusion, model)
+
+
+def is_sound_inference(rule: InferenceRule) -> bool:
+    variables = list(rule.variables())
+    for model in all_models(variables):
+        if not evaluate_inference(rule, model):
+            return False
+    return True
