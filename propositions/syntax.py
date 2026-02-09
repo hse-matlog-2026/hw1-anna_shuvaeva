@@ -59,9 +59,9 @@ def is_binary(string: str) -> bool:
     Returns:
         ``True`` if the given string is a binary operator, ``False`` otherwise.
     """
-    return string == '&' or string == '|' or string == '->'
+    # return string == '&' or string == '|' or string == '->'
     # For Chapter 3:
-    # return string in {'&', '|',  '->', '+', '<->', '-&', '-|'}
+    return string in {'&', '|',  '->', '+', '<->', '-&', '-|'}
 
 @frozen
 class Formula:
@@ -224,10 +224,21 @@ class Formula:
             if first is None:
                 return None, rest
             rest = rest.lstrip()
+            
+            # Проверяем все бинарные операторы
             if rest.startswith('->'):
                 op = '->'
                 rest = rest[2:]
-            elif rest and rest[0] in ('&', '|'):
+            elif rest.startswith('<->'):
+                op = '<->'
+                rest = rest[3:]
+            elif rest.startswith('-&'):
+                op = '-&'
+                rest = rest[2:]
+            elif rest.startswith('-|'):
+                op = '-|'
+                rest = rest[2:]
+            elif rest and rest[0] in ('&', '|', '+'):
                 op = rest[0]
                 rest = rest[1:]
             else:
@@ -235,6 +246,7 @@ class Formula:
                     return None, f"Expected operator, got '{rest[:10]}'"
                 else:
                     return None, f"Expected operator, got '{rest}'"
+            
             rest = rest.lstrip()
             second, rest = Formula._parse_prefix(rest)
             if second is None:
@@ -253,7 +265,6 @@ class Formula:
             return None, f"Invalid formula: {string[:10]}..."
         else:
             return None, f"Invalid formula: {string}"
-        
     @staticmethod
     def is_formula(string: str) -> bool:
         """Checks if the given string is a valid representation of a formula.
@@ -358,4 +369,53 @@ class Formula:
             assert is_constant(operator) or is_unary(operator) or \
                    is_binary(operator)
             assert substitution_map[operator].variables().issubset({'p', 'q'})
-        # Task 3.4
+
+    def substitute_variables(self, substitution_map: Mapping[str, Formula]) -> Formula:
+        for variable in substitution_map:
+            assert is_variable(variable)
+        
+        if is_variable(self.root):
+            if self.root in substitution_map:
+                return substitution_map[self.root]
+            else:
+                return Formula(self.root)
+        elif is_constant(self.root):
+            return Formula(self.root)
+        elif is_unary(self.root):
+            new_first = self.first.substitute_variables(substitution_map)
+            return Formula('~', new_first)
+        else:
+            new_first = self.first.substitute_variables(substitution_map)
+            new_second = self.second.substitute_variables(substitution_map)
+            return Formula(self.root, new_first, new_second)
+        
+    def substitute_operators(self, substitution_map: Mapping[str, Formula]) -> Formula:
+
+        for operator in substitution_map:
+            assert is_constant(operator) or is_unary(operator) or \
+                is_binary(operator)
+            assert substitution_map[operator].variables().issubset({'p', 'q'})
+        if is_variable(self.root):
+            return Formula(self.root)
+        elif is_constant(self.root):
+            if self.root in substitution_map:
+                return substitution_map[self.root]
+            else:
+                return Formula(self.root)
+        
+        elif is_unary(self.root):
+            new_first = self.first.substitute_operators(substitution_map)
+            if self.root in substitution_map:
+                subst_formula = substitution_map[self.root]
+                return subst_formula.substitute_variables({'p': new_first})
+            else:
+                return Formula('~', new_first)
+        else:
+            new_first = self.first.substitute_operators(substitution_map)
+            new_second = self.second.substitute_operators(substitution_map)
+            if self.root in substitution_map:
+                subst_formula = substitution_map[self.root]
+                return subst_formula.substitute_variables({'p': new_first, 'q': new_second})
+            else:
+                return Formula(self.root, new_first, new_second)
+    

@@ -1,77 +1,105 @@
-# This file is part of the materials accompanying the book
-# "Mathematical Logic through Python" by Gonczarowski and Nisan,
-# Cambridge University Press. Book site: www.LogicThruPython.org
-# (c) Yannai A. Gonczarowski and Noam Nisan, 2017-2022
-# File name: propositions/operators.py
-
-"""Syntactic conversion of propositional formulas to use only specific sets of
-operators."""
-
 from propositions.syntax import *
 from propositions.semantics import *
 
 def to_not_and_or(formula: Formula) -> Formula:
-    """Syntactically converts the given formula to an equivalent formula that
-    contains no constants or operators beyond ``'~'``, ``'&'``, and ``'|'``.
 
-    Parameters:
-        formula: formula to convert.
+    if is_variable(formula.root):
+        return Formula(formula.root)
+    elif is_constant(formula.root):
+        if formula.root == 'T':
+            return Formula.parse('(z1|~z1)')
+        else:  # 'F'
+            return Formula.parse('(z1&~z1)')
+    elif is_unary(formula.root):
+        inner = to_not_and_or(formula.first)
+        return Formula('~', inner)
+    else:
+        left = to_not_and_or(formula.first)
+        right = to_not_and_or(formula.second)
+        
+        if formula.root == '&':
+            return Formula('&', left, right)
+        elif formula.root == '|':
+            return Formula('|', left, right)
+        elif formula.root == '->':
+            return Formula.parse(f'(~{left}|{right})')
+        elif formula.root == '+':
+            return Formula.parse(f'(({left}&~{right})|(~{left}&{right}))')
+        elif formula.root == '<->':
+            return Formula.parse(f'(({left}&{right})|(~{left}&~{right}))')
+        elif formula.root == '-&':
+            return Formula.parse(f'~({left}&{right})')
+        elif formula.root == '-|':
+            return Formula.parse(f'~({left}|{right})')
 
-    Returns:
-        A formula that has the same truth table as the given formula, but
-        contains no constants or operators beyond ``'~'``, ``'&'``, and
-        ``'|'``.
-    """
-    # Task 3.5
+def _eliminate_or(formula: Formula) -> Formula:
+
+    if is_variable(formula.root):
+        return formula
+    elif is_constant(formula.root):
+        return formula
+    elif is_unary(formula.root):
+        return Formula('~', _eliminate_or(formula.first))
+    else:
+        left = _eliminate_or(formula.first)
+        right = _eliminate_or(formula.second)
+        
+        if formula.root == '&':
+            return Formula('&', left, right)
+        elif formula.root == '|':
+            return Formula('~', Formula('&', 
+                                       Formula('~', left), 
+                                       Formula('~', right)))
+        else:
+            return formula
 
 def to_not_and(formula: Formula) -> Formula:
-    """Syntactically converts the given formula to an equivalent formula that
-    contains no constants or operators beyond ``'~'`` and ``'&'``.
-
-    Parameters:
-        formula: formula to convert.
-
-    Returns:
-        A formula that has the same truth table as the given formula, but
-        contains no constants or operators beyond ``'~'`` and ``'&'``.
-    """
-    # Task 3.6a
+    f1 = to_not_and_or(formula)
+    return _eliminate_or(f1)
 
 def to_nand(formula: Formula) -> Formula:
-    """Syntactically converts the given formula to an equivalent formula that
-    contains no constants or operators beyond ``'-&'``.
 
-    Parameters:
-        formula: formula to convert.
+    f_not_and = to_not_and(formula)
+    return _to_nand_from_not_and(f_not_and)
 
-    Returns:
-        A formula that has the same truth table as the given formula, but
-        contains no constants or operators beyond ``'-&'``.
-    """
-    # Task 3.6b
+def _to_nand_from_not_and(formula: Formula) -> Formula:
+
+    if is_variable(formula.root):
+        return formula
+    elif is_unary(formula.root):
+        inner = _to_nand_from_not_and(formula.first)
+        return Formula('-&', inner, inner)
+    else:
+        left = _to_nand_from_not_and(formula.first)
+        right = _to_nand_from_not_and(formula.second)
+        nand = Formula('-&', left, right)
+        return Formula('-&', nand, nand)
 
 def to_implies_not(formula: Formula) -> Formula:
-    """Syntactically converts the given formula to an equivalent formula that
-    contains no constants or operators beyond ``'->'`` and ``'~'``.
+    f_not_and = to_not_and(formula)
+    return _to_implies_not_from_not_and(f_not_and)
 
-    Parameters:
-        formula: formula to convert.
-
-    Returns:
-        A formula that has the same truth table as the given formula, but
-        contains no constants or operators beyond ``'->'`` and ``'~'``.
-    """
-    # Task 3.6c
+def _to_implies_not_from_not_and(formula: Formula) -> Formula:
+    if is_variable(formula.root):
+        return formula
+    elif is_unary(formula.root):
+        return Formula('~', _to_implies_not_from_not_and(formula.first))
+    else:
+        left = _to_implies_not_from_not_and(formula.first)
+        right = _to_implies_not_from_not_and(formula.second)
+        return Formula('~', Formula('->', left, Formula('~', right)))
 
 def to_implies_false(formula: Formula) -> Formula:
-    """Syntactically converts the given formula to an equivalent formula that
-    contains no constants or operators beyond ``'->'`` and ``'F'``.
+    f_implies_not = to_implies_not(formula)
+    return _to_implies_false_from_implies_not(f_implies_not)
 
-    Parameters:
-        formula: formula to convert.
-
-    Returns:
-        A formula that has the same truth table as the given formula, but
-        contains no constants or operators beyond ``'->'`` and ``'F'``.
-    """
-    # Task 3.6d
+def _to_implies_false_from_implies_not(formula: Formula) -> Formula:
+    if is_variable(formula.root):
+        return formula
+    elif is_unary(formula.root):
+        inner = _to_implies_false_from_implies_not(formula.first)
+        return Formula('->', inner, Formula('F'))
+    else:
+        left = _to_implies_false_from_implies_not(formula.first)
+        right = _to_implies_false_from_implies_not(formula.second)
+        return Formula('->', left, right)
