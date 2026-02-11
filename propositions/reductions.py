@@ -12,21 +12,12 @@ from typing import AbstractSet, Mapping, Tuple, Union
 from propositions.syntax import *
 from propositions.semantics import *
 
-#: A graph on a vertex set of the form ``(1,``...\ ``,``\ `n_vertices`\ ``)``,
-#: represented by the number of vertices `n_vertices` and a set of edges over
-#: the vertices.
+#: A graph on a vertex set of the form (1,...,n_vertices),
+#: represented by the number of vertices n_vertices and a set of edges.
 Graph = Tuple[int, AbstractSet[Tuple[int, int]]] 
 
+
 def is_graph(graph: Graph) -> bool:
-    """Checks if the given data structure is a valid representation of a graph.
-
-    Parameters:
-        graph: data structure to check.
-
-    Returns:
-        ``True`` if the given data structure is a valid representation of a
-        graph, ``False`` otherwise.
-    """
     (n_vertices, edges) = graph
     for edge in edges:
         for vertex in edge:
@@ -36,75 +27,87 @@ def is_graph(graph: Graph) -> bool:
             return False
     return True
 
+
 def is_valid_3coloring(graph: Graph, coloring: Mapping[int, int]) -> bool:
-    """Checks whether the given coloring is a valid coloring of the given graph
-    by the colors 1, 2, and 3.
-
-    Parameters:
-        graph: graph to check.
-        coloring: mapping from the vertices of the given graph to colors,
-            to check.
-
-    Returns:
-        ``True`` if the given coloring is a valid coloring of the given graph by
-        the colors 1, 2, and 3; ``False`` otherwise.
-    """
     assert is_graph(graph)
     (n_vertices, edges) = graph
     for vertex in range(1, n_vertices + 1):
-        if vertex not in coloring.keys() or coloring[vertex] not in {1, 2, 3}:
+        if vertex not in coloring or coloring[vertex] not in {1, 2, 3}:
             return False
     for edge in edges:
         if coloring[edge[0]] == coloring[edge[1]]:
             return False
     return True
 
+
+# ===============================
+# 3-COLORING → SAT REDUCTION
+# ===============================
+
 def graph3coloring_to_formula(graph: Graph) -> Formula:
-    """Efficiently reduces the 3-coloring problem of the given graph into a
-    satisfiability problem.
-
-    Parameters:
-        graph: graph whose 3-coloring problem to reduce.
-       
-    Returns:
-        A propositional formula that is satisfiable if and only if the given
-        graph is 3-colorable.
-    """
     assert is_graph(graph)
-    # Optional Task 2.10a
+    n_vertices, edges = graph
 
-def assignment_to_3coloring(graph: Graph, assignment: Model) -> \
-        Mapping[int, int]:
-    """Efficiently transforms an assignment to the formula corresponding to the
-    3-coloring problem of the given graph, to a 3-coloring of the given graph so
-    that the 3-coloring is valid if and only if the given assignment is
-    satisfying.
+    clauses = []
 
-    Parameters:
-        graph: graph to produce a 3-coloring for.
-        assignment: assignment to the variable names of the formula returned by
-            `graph3coloring_to_formula`\\ ``(``\\ `graph`\\ ``)``.
+    # helper for variable x_v_c
+    def var(v: int, c: int) -> Formula:
+        return Formula(f'x{v}_{c}')
 
-    Returns:
-        A 3-coloring of the given graph by the colors 1, 2, and 3 that is valid
-        if and only if the given assignment satisfies the formula
-        `graph3coloring_to_formula`\\ ``(``\\ `graph`\\ ``)``.
-    """
+    # 1. each vertex has at least one color
+    for v in range(1, n_vertices + 1):
+        clause = Formula('|',
+                         Formula('|', var(v, 1), var(v, 2)),
+                         var(v, 3))
+        clauses.append(clause)
+
+    # 2. no vertex has two colors
+    for v in range(1, n_vertices + 1):
+        for c1 in range(1, 4):
+            for c2 in range(c1 + 1, 4):
+                clauses.append(
+                    Formula('|',
+                            Formula('~', var(v, c1)),
+                            Formula('~', var(v, c2)))
+                )
+
+    # 3. adjacent vertices cannot share a color
+    for (u, v) in edges:
+        for c in range(1, 4):
+            clauses.append(
+                Formula('|',
+                        Formula('~', var(u, c)),
+                        Formula('~', var(v, c)))
+            )
+
+    # conjunction of all clauses
+    if not clauses:
+        return Formula('T')
+
+    formula = clauses[0]
+    for clause in clauses[1:]:
+        formula = Formula('&', formula, clause)
+
+    return formula
+
+
+def assignment_to_3coloring(graph: Graph,
+                            assignment: Model) -> Mapping[int, int]:
     assert is_graph(graph)
-    formula = graph3coloring_to_formula(graph)
-    assert evaluate(formula, assignment)
-    # Optional Task 2.10b
+    n_vertices, _ = graph
+
+    coloring = {}
+
+    for v in range(1, n_vertices + 1):
+        for c in range(1, 4):
+            if assignment.get(f'x{v}_{c}', False):
+                coloring[v] = c
+                break
+
+    return coloring
+
 
 def tricolor_graph(graph: Graph) -> Union[Mapping[int, int], None]:
-    """Computes a 3-coloring of the given graph.
-
-    Parameters:
-        graph: graph to 3-color.
-
-    Returns:
-        An arbitrary 3-coloring of the given graph if it is 3-colorable,
-        ``None`` otherwise.
-    """
     assert is_graph(graph)
     formula = graph3coloring_to_formula(graph)
     for assignment in all_models(list(formula.variables())):

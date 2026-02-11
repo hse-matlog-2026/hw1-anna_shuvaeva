@@ -74,7 +74,7 @@ class Model(Generic[T]):
             assert is_relation(relation)
             relation_interpretation = relation_interpretations[relation]
             if len(relation_interpretation) == 0:
-                arity = -1 # any
+                arity = -1
             else:
                 some_arguments = next(iter(relation_interpretation))
                 arity = len(some_arguments)
@@ -126,7 +126,7 @@ class Model(Generic[T]):
                 if len(self.function_interpretations) > 0 else '')
         
     def evaluate_term(self, term: Term,
-                      assignment: Mapping[str, T] = frozendict()) -> T:
+                  assignment: Mapping[str, T] = frozendict()) -> T:
         """Calculates the value of the given term in the current model under the
         given assignment of values to variable names.
 
@@ -143,13 +143,22 @@ class Model(Generic[T]):
         """
         assert term.constants().issubset(self.constant_interpretations.keys())
         assert term.variables().issubset(assignment.keys())
-        for function,arity in term.functions():
+        for function, arity in term.functions():
             assert function in self.function_interpretations and \
-                   self.function_arities[function] == arity
-        # Task 7.7
+                self.function_arities[function] == arity
+        
+        
+        if is_constant(term.root):
+            return self.constant_interpretations[term.root]
+        elif is_variable(term.root):
+            return assignment[term.root]
+        else:
+           
+            args = tuple(self.evaluate_term(arg, assignment) for arg in term.arguments)
+            return self.function_interpretations[term.root][args]
 
     def evaluate_formula(self, formula: Formula,
-                         assignment: Mapping[str, T] = frozendict()) -> bool:
+                     assignment: Mapping[str, T] = frozendict()) -> bool:
         """Calculates the truth value of the given formula in the current model
         under the given assignment of values to free occurrences of variable
         names.
@@ -169,13 +178,57 @@ class Model(Generic[T]):
         assert formula.constants().issubset(
             self.constant_interpretations.keys())
         assert formula.free_variables().issubset(assignment.keys())
-        for function,arity in formula.functions():
+        for function, arity in formula.functions():
             assert function in self.function_interpretations and \
-                   self.function_arities[function] == arity
-        for relation,arity in formula.relations():
+                self.function_arities[function] == arity
+        for relation, arity in formula.relations():
             assert relation in self.relation_interpretations and \
-                   self.relation_arities[relation] in {-1, arity}
-        # Task 7.8
+                self.relation_arities[relation] in {-1, arity}
+        if is_equality(formula.root):
+            left = self.evaluate_term(formula.arguments[0], assignment)
+            right = self.evaluate_term(formula.arguments[1], assignment)
+            return left == right
+        
+       
+        elif is_relation(formula.root):
+            args = tuple(self.evaluate_term(arg, assignment) for arg in formula.arguments)
+           
+            if self.relation_arities[formula.root] == -1:
+                return False
+            return args in self.relation_interpretations[formula.root]
+        
+       
+        elif is_unary(formula.root):
+            return not self.evaluate_formula(formula.first, assignment)
+        
+        
+        elif is_binary(formula.root):
+            if formula.root == '&':
+                return self.evaluate_formula(formula.first, assignment) and \
+                    self.evaluate_formula(formula.second, assignment)
+            elif formula.root == '|':
+                return self.evaluate_formula(formula.first, assignment) or \
+                    self.evaluate_formula(formula.second, assignment)
+            else:
+                return not self.evaluate_formula(formula.first, assignment) or \
+                    self.evaluate_formula(formula.second, assignment)
+        
+        
+        else: 
+            if formula.root == 'A': 
+                for element in self.universe:
+                    new_assignment = dict(assignment)
+                    new_assignment[formula.variable] = element
+                    if not self.evaluate_formula(formula.statement, new_assignment):
+                        return False
+                return True
+            else:
+                for element in self.universe:
+                    new_assignment = dict(assignment)
+                    new_assignment[formula.variable] = element
+                    if self.evaluate_formula(formula.statement, new_assignment):
+                        return True
+                return False
 
     def is_model_of(self, formulas: AbstractSet[Formula]) -> bool:
         """Checks if the current model is a model of the given formulas.
@@ -193,10 +246,38 @@ class Model(Generic[T]):
         for formula in formulas:
             assert formula.constants().issubset(
                 self.constant_interpretations.keys())
-            for function,arity in formula.functions():
+            for function, arity in formula.functions():
                 assert function in self.function_interpretations and \
-                       self.function_arities[function] == arity
-            for relation,arity in formula.relations():
+                    self.function_arities[function] == arity
+            for relation, arity in formula.relations():
                 assert relation in self.relation_interpretations and \
-                       self.relation_arities[relation] in {-1, arity}
-        # Task 7.9
+                    self.relation_arities[relation] in {-1, arity}
+        
+        
+        for formula in formulas:
+            free_vars = formula.free_variables()
+            
+            if free_vars:
+                
+                def check_assignments(remaining_vars, current_assignment):
+                    if not remaining_vars:
+                        
+                        if not self.evaluate_formula(formula, current_assignment):
+                            return False
+                        return True
+                    
+                    var = remaining_vars[0]
+                    for element in self.universe:
+                        new_assignment = dict(current_assignment)
+                        new_assignment[var] = element
+                        if not check_assignments(remaining_vars[1:], new_assignment):
+                            return False
+                    return True
+                
+                if not check_assignments(list(free_vars), {}):
+                    return False
+            else:
+                if not self.evaluate_formula(formula, {}):
+                    return False
+        
+        return True

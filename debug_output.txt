@@ -1,0 +1,28 @@
+Testing proof of special case for the instance ['(w|z)'] ==> '(z|w)'
+and the following proof:
+Proof of ['(x|y)'] ==> '(y|x)' via inference rules:
+  [] ==> '(~p|p)'
+  ['(p|q)', '(~p|r)'] ==> '(q|r)'
+Lines:
+  0) (x|y)
+  1) (~x|x)    (Inference Rule [] ==> '(~p|p)')
+  2) (y|x)    (Inference Rule ['(p|q)', '(~p|r)'] ==> '(q|r)' on lines 0,1)
+QED
+
+DEBUG prove_specialization:
+  substitution: {'w': x, 'z': y}
+  inverse_substitution: {'x': w, 'y': z}
+  Line 0: (x|y)
+    -> (w|z)
+Traceback (most recent call last):
+  File "/Users/annashuvaeva/Desktop/hw1-anna_shuvaeva/test_chapter05.py", line 40, in <module>
+    test_task1(True)
+  File "/Users/annashuvaeva/Desktop/hw1-anna_shuvaeva/test_chapter05.py", line 17, in test_task1
+    test_prove_specialization(debug)
+  File "/Users/annashuvaeva/Desktop/hw1-anna_shuvaeva/propositions/proofs_test.py", line 564, in test_prove_specialization
+    instance_proof = prove_specialization(
+                     ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/annashuvaeva/Desktop/hw1-anna_shuvaeva/propositions/proofs.py", line 423, in prove_specialization
+    print(f"  Line {i}: {line.formula if line.rule is None else line.conclusion}")
+                                                                ^^^^^^^^^^^^^^^
+AttributeError: 'Line' object has no attribute 'conclusion'

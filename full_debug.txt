@@ -1,0 +1,213 @@
+Testing proof of special case for the instance ['(w|z)'] ==> '(z|w)'
+and the following proof:
+Proof of ['(x|y)'] ==> '(y|x)' via inference rules:
+  [] ==> '(~p|p)'
+  ['(p|q)', '(~p|r)'] ==> '(q|r)'
+Lines:
+  0) (x|y)
+  1) (~x|x)    (Inference Rule [] ==> '(~p|p)')
+  2) (y|x)    (Inference Rule ['(p|q)', '(~p|r)'] ==> '(q|r)' on lines 0,1)
+QED
+
+DEBUG: proof.statement = ['(x|y)'] ==> '(y|x)'
+DEBUG: specialization = ['(w|z)'] ==> '(z|w)'
+DEBUG: substitution = {'w': x, 'z': y}
+DEBUG: w -> x (type: <class 'propositions.syntax.Formula'>)
+DEBUG: z -> y (type: <class 'propositions.syntax.Formula'>)
+DEBUG: inverse_substitution = {'x': w, 'y': z}
+DEBUG line 0: (x|y) -> (w|z)
+DEBUG line 1: (~x|x) -> (~w|w)
+DEBUG line 2: (y|x) -> (z|w)
+DEBUG RESULT: result_proof.statement = ['(w|z)'] ==> '(z|w)'
+DEBUG RESULT: result_proof lines:
+  0) (w|z)
+  1) (~w|w)    (Inference Rule [] ==> '(~p|p)')
+  2) (z|w)    (Inference Rule ['(p|q)', '(~p|r)'] ==> '(q|r)' on lines 0,1)
+Testing proof of special case for the instance ['(p|q)'] ==> '(q|p)'
+and the following proof:
+Proof of ['(x|y)'] ==> '(y|x)' via inference rules:
+  [] ==> '(~p|p)'
+  ['(p|q)', '(~p|r)'] ==> '(q|r)'
+Lines:
+  0) (x|y)
+  1) (~x|x)    (Inference Rule [] ==> '(~p|p)')
+  2) (y|x)    (Inference Rule ['(p|q)', '(~p|r)'] ==> '(q|r)' on lines 0,1)
+QED
+
+DEBUG: proof.statement = ['(x|y)'] ==> '(y|x)'
+DEBUG: specialization = ['(p|q)'] ==> '(q|p)'
+DEBUG: substitution = {'p': x, 'q': y}
+DEBUG: p -> x (type: <class 'propositions.syntax.Formula'>)
+DEBUG: q -> y (type: <class 'propositions.syntax.Formula'>)
+DEBUG: inverse_substitution = {'x': p, 'y': q}
+DEBUG line 0: (x|y) -> (p|q)
+DEBUG line 1: (~x|x) -> (~p|p)
+DEBUG line 2: (y|x) -> (q|p)
+DEBUG RESULT: result_proof.statement = ['(p|q)'] ==> '(q|p)'
+DEBUG RESULT: result_proof lines:
+  0) (p|q)
+  1) (~p|p)    (Inference Rule [] ==> '(~p|p)')
+  2) (q|p)    (Inference Rule ['(p|q)', '(~p|r)'] ==> '(q|r)' on lines 0,1)
+Testing proof of special case for the instance ['(q|x)'] ==> '(x|q)'
+and the following proof:
+Proof of ['(x|y)'] ==> '(y|x)' via inference rules:
+  [] ==> '(~p|p)'
+  ['(p|q)', '(~p|r)'] ==> '(q|r)'
+Lines:
+  0) (x|y)
+  1) (~x|x)    (Inference Rule [] ==> '(~p|p)')
+  2) (y|x)    (Inference Rule ['(p|q)', '(~p|r)'] ==> '(q|r)' on lines 0,1)
+QED
+
+DEBUG: proof.statement = ['(x|y)'] ==> '(y|x)'
+DEBUG: specialization = ['(q|x)'] ==> '(x|q)'
+DEBUG: substitution = {'q': x, 'x': y}
+DEBUG: q -> x (type: <class 'propositions.syntax.Formula'>)
+DEBUG: x -> y (type: <class 'propositions.syntax.Formula'>)
+DEBUG: inverse_substitution = {'x': q, 'y': x}
+DEBUG line 0: (x|y) -> (q|x)
+DEBUG line 1: (~x|x) -> (~q|q)
+DEBUG line 2: (y|x) -> (x|q)
+DEBUG RESULT: result_proof.statement = ['(q|x)'] ==> '(x|q)'
+DEBUG RESULT: result_proof lines:
+  0) (q|x)
+  1) (~q|q)    (Inference Rule [] ==> '(~p|p)')
+  2) (x|q)    (Inference Rule ['(p|q)', '(~p|r)'] ==> '(q|r)' on lines 0,1)
+Testing proof of special case for the instance ['((p|y)|(~r|y))'] ==> '((~r|y)|(p|y))'
+and the following proof:
+Proof of ['(x|y)'] ==> '(y|x)' via inference rules:
+  [] ==> '(~p|p)'
+  ['(p|q)', '(~p|r)'] ==> '(q|r)'
+Lines:
+  0) (x|y)
+  1) (~x|x)    (Inference Rule [] ==> '(~p|p)')
+  2) (y|x)    (Inference Rule ['(p|q)', '(~p|r)'] ==> '(q|r)' on lines 0,1)
+QED
+
+DEBUG: proof.statement = ['(x|y)'] ==> '(y|x)'
+DEBUG: specialization = ['((p|y)|(~r|y))'] ==> '((~r|y)|(p|y))'
+DEBUG: substitution = None
+DEBUG: inverse_substitution = {'x': (p|y), 'y': (~r|y)}
+DEBUG line 0: (x|y) -> ((p|y)|(~r|y))
+DEBUG line 1: (~x|x) -> (~(p|y)|(p|y))
+DEBUG line 2: (y|x) -> ((~r|y)|(p|y))
+DEBUG RESULT: result_proof.statement = ['((p|y)|(~r|y))'] ==> '((~r|y)|(p|y))'
+DEBUG RESULT: result_proof lines:
+  0) ((p|y)|(~r|y))
+  1) (~(p|y)|(p|y))    (Inference Rule [] ==> '(~p|p)')
+  2) ((~r|y)|(p|y))    (Inference Rule ['(p|q)', '(~p|r)'] ==> '(q|r)' on lines 0,1)
+Testing proof of special case for the instance ['((x|y)|z)'] ==> '(x|(y|z))'
+and the following proof:
+Proof of ['((x|y)|z)'] ==> '(x|(y|z))' via inference rules:
+  ['(x|(y|z))'] ==> '((x|y)|z)'
+  ['(x|y)'] ==> '(y|x)'
+Lines:
+  0) ((x|y)|z)
+  1) (z|(x|y))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 0)
+  2) ((z|x)|y)    (Inference Rule ['(x|(y|z))'] ==> '((x|y)|z)' on line 1)
+  3) (y|(z|x))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 2)
+  4) ((y|z)|x)    (Inference Rule ['(x|(y|z))'] ==> '((x|y)|z)' on line 3)
+  5) (x|(y|z))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 4)
+QED
+
+DEBUG: proof.statement = ['((x|y)|z)'] ==> '(x|(y|z))'
+DEBUG: specialization = ['((x|y)|z)'] ==> '(x|(y|z))'
+DEBUG: substitution = {'x': x, 'y': y, 'z': z}
+DEBUG: x -> x (type: <class 'propositions.syntax.Formula'>)
+DEBUG: y -> y (type: <class 'propositions.syntax.Formula'>)
+DEBUG: z -> z (type: <class 'propositions.syntax.Formula'>)
+DEBUG: inverse_substitution = {'x': x, 'y': y, 'z': z}
+DEBUG line 0: ((x|y)|z) -> ((x|y)|z)
+DEBUG line 1: (z|(x|y)) -> (z|(x|y))
+DEBUG line 2: ((z|x)|y) -> ((z|x)|y)
+DEBUG line 3: (y|(z|x)) -> (y|(z|x))
+DEBUG line 4: ((y|z)|x) -> ((y|z)|x)
+DEBUG line 5: (x|(y|z)) -> (x|(y|z))
+DEBUG RESULT: result_proof.statement = ['((x|y)|z)'] ==> '(x|(y|z))'
+DEBUG RESULT: result_proof lines:
+  0) ((x|y)|z)
+  1) (z|(x|y))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 0)
+  2) ((z|x)|y)    (Inference Rule ['(x|(y|z))'] ==> '((x|y)|z)' on line 1)
+  3) (y|(z|x))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 2)
+  4) ((y|z)|x)    (Inference Rule ['(x|(y|z))'] ==> '((x|y)|z)' on line 3)
+  5) (x|(y|z))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 4)
+Testing proof of special case for the instance ['((p|q)|r)'] ==> '(p|(q|r))'
+and the following proof:
+Proof of ['((x|y)|z)'] ==> '(x|(y|z))' via inference rules:
+  ['(x|(y|z))'] ==> '((x|y)|z)'
+  ['(x|y)'] ==> '(y|x)'
+Lines:
+  0) ((x|y)|z)
+  1) (z|(x|y))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 0)
+  2) ((z|x)|y)    (Inference Rule ['(x|(y|z))'] ==> '((x|y)|z)' on line 1)
+  3) (y|(z|x))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 2)
+  4) ((y|z)|x)    (Inference Rule ['(x|(y|z))'] ==> '((x|y)|z)' on line 3)
+  5) (x|(y|z))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 4)
+QED
+
+DEBUG: proof.statement = ['((x|y)|z)'] ==> '(x|(y|z))'
+DEBUG: specialization = ['((p|q)|r)'] ==> '(p|(q|r))'
+DEBUG: substitution = {'p': x, 'q': y, 'r': z}
+DEBUG: p -> x (type: <class 'propositions.syntax.Formula'>)
+DEBUG: q -> y (type: <class 'propositions.syntax.Formula'>)
+DEBUG: r -> z (type: <class 'propositions.syntax.Formula'>)
+DEBUG: inverse_substitution = {'x': p, 'y': q, 'z': r}
+DEBUG line 0: ((x|y)|z) -> ((p|q)|r)
+DEBUG line 1: (z|(x|y)) -> (r|(p|q))
+DEBUG line 2: ((z|x)|y) -> ((r|p)|q)
+DEBUG line 3: (y|(z|x)) -> (q|(r|p))
+DEBUG line 4: ((y|z)|x) -> ((q|r)|p)
+DEBUG line 5: (x|(y|z)) -> (p|(q|r))
+DEBUG RESULT: result_proof.statement = ['((p|q)|r)'] ==> '(p|(q|r))'
+DEBUG RESULT: result_proof lines:
+  0) ((p|q)|r)
+  1) (r|(p|q))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 0)
+  2) ((r|p)|q)    (Inference Rule ['(x|(y|z))'] ==> '((x|y)|z)' on line 1)
+  3) (q|(r|p))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 2)
+  4) ((q|r)|p)    (Inference Rule ['(x|(y|z))'] ==> '((x|y)|z)' on line 3)
+  5) (p|(q|r))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 4)
+Testing proof of special case for the instance ['((x|x)|x)'] ==> '(x|(x|x))'
+and the following proof:
+Proof of ['((x|y)|z)'] ==> '(x|(y|z))' via inference rules:
+  ['(x|(y|z))'] ==> '((x|y)|z)'
+  ['(x|y)'] ==> '(y|x)'
+Lines:
+  0) ((x|y)|z)
+  1) (z|(x|y))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 0)
+  2) ((z|x)|y)    (Inference Rule ['(x|(y|z))'] ==> '((x|y)|z)' on line 1)
+  3) (y|(z|x))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 2)
+  4) ((y|z)|x)    (Inference Rule ['(x|(y|z))'] ==> '((x|y)|z)' on line 3)
+  5) (x|(y|z))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 4)
+QED
+
+DEBUG: proof.statement = ['((x|y)|z)'] ==> '(x|(y|z))'
+DEBUG: specialization = ['((x|x)|x)'] ==> '(x|(x|x))'
+DEBUG: substitution = None
+DEBUG: inverse_substitution = {}
+DEBUG line 0: ((x|y)|z) -> ((x|y)|z)
+DEBUG line 1: (z|(x|y)) -> (z|(x|y))
+DEBUG line 2: ((z|x)|y) -> ((z|x)|y)
+DEBUG line 3: (y|(z|x)) -> (y|(z|x))
+DEBUG line 4: ((y|z)|x) -> ((y|z)|x)
+DEBUG line 5: (x|(y|z)) -> (x|(y|z))
+DEBUG RESULT: result_proof.statement = ['((x|x)|x)'] ==> '(x|(x|x))'
+DEBUG RESULT: result_proof lines:
+  0) ((x|y)|z)
+  1) (z|(x|y))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 0)
+  2) ((z|x)|y)    (Inference Rule ['(x|(y|z))'] ==> '((x|y)|z)' on line 1)
+  3) (y|(z|x))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 2)
+  4) ((y|z)|x)    (Inference Rule ['(x|(y|z))'] ==> '((x|y)|z)' on line 3)
+  5) (x|(y|z))    (Inference Rule ['(x|y)'] ==> '(y|x)' on line 4)
+DEBUG RESULT: Proof is invalid!
+Traceback (most recent call last):
+  File "/Users/annashuvaeva/Desktop/hw1-anna_shuvaeva/test_chapter05.py", line 40, in <module>
+    test_task1(True)
+  File "/Users/annashuvaeva/Desktop/hw1-anna_shuvaeva/test_chapter05.py", line 17, in test_task1
+    test_prove_specialization(debug)
+  File "/Users/annashuvaeva/Desktop/hw1-anna_shuvaeva/propositions/proofs_test.py", line 585, in test_prove_specialization
+    instance_proof = prove_specialization(
+                     ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/annashuvaeva/Desktop/hw1-anna_shuvaeva/propositions/proofs.py", line 460, in prove_specialization
+    if not result_proof.rule_for_line(i).is_instance_of(result_proof.lines[i]):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'is_instance_of'

@@ -16,6 +16,25 @@ from propositions.proofs import *
 from propositions.axiomatic_systems import *
 from propositions.deduction import *
 
+
+def is_model(model: Model) -> bool:
+    """Checks if the given object is a valid model.
+    
+    Parameters:
+        model: object to check.
+        
+    Returns:
+        ``True`` if the given object is a valid model, ``False`` otherwise.
+    """
+    if not isinstance(model, dict):
+        return False
+    for key, value in model.items():
+        if not is_variable(key):
+            return False
+        if not isinstance(value, bool):
+            return False
+    return True
+
 def formulas_capturing_model(model: Model) -> List[Formula]:
     """Computes the formulas that capture the given model: ``'``\\ `x`\\ ``'``
     for each variable name `x` that is assigned the value ``True`` in the given
@@ -35,49 +54,147 @@ def formulas_capturing_model(model: Model) -> List[Formula]:
     """
     assert is_model(model)
     # Task 6.1a
+    
+    # Получаем отсортированные по алфавиту переменные
+    variables = sorted(model.keys())
+    
+    formulas = []
+    for var in variables:
+        if model[var]:
+            formulas.append(Formula(var))
+        else:
+            formulas.append(Formula('~', Formula(var)))
+    
+    return formulas
+    # Task 6.1a
 
-def prove_in_model(formula: Formula, model:Model) -> Proof:
-    """Either proves the given formula or proves its negation, from the formulas
-    that capture the given model.
-
-    Parameters:
-        formula: formula that contains no constants or operators beyond ``'->'``
-            and ``'~'``, whose affirmation or negation is to prove.
-        model: model from whose formulas to prove.
-
-    Returns:
-        If `formula` evaluates to ``True`` in the given model, then a valid
-        proof of `formula`; otherwise a valid proof of ``'~``\\ `formula`\\ ``'``.
-        The returned proof is from the formulas that capture the given model, in
-        the order returned by `formulas_capturing_model`\\ ``(``\\ `model`\\ ``)``,
-        via `~propositions.axiomatic_systems.AXIOMATIC_SYSTEM`.
-
-    Examples:
-        >>> proof = prove_in_model(Formula.parse('(p->q7)'),
-        ...                        {'q7': False, 'p': False})
-        >>> proof.is_valid()
-        True
-        >>> proof.statement.conclusion
-        (p->q7)
-        >>> proof.statement.assumptions
-        (~p, ~q7)
-        >>> proof.rules == AXIOMATIC_SYSTEM
-        True
-
-        >>> proof = prove_in_model(Formula.parse('(p->q7)'),
-        ...                        {'q7': False, 'p': True})
-        >>> proof.is_valid()
-        True
-        >>> proof.statement.conclusion
-        ~(p->q7)
-        >>> proof.statement.assumptions
-        (p, ~q7)
-        >>> proof.rules == AXIOMATIC_SYSTEM
-        True
-    """
+def prove_in_model(formula: Formula, model: Model) -> Proof:
     assert formula.operators().issubset({'->', '~'})
     assert is_model(model)
-    # Task 6.1b
+
+    assumptions = list(formulas_capturing_model(model))
+    lines = []
+
+    # добавляем предположения
+    for assumption in assumptions:
+        lines.append(Proof.Line(assumption))
+
+    def prove(f: Formula) -> int:
+        # -------- переменная --------
+        if is_variable(f.root):
+            for i, assumption in enumerate(assumptions):
+                if assumption == f:
+                    return i
+            raise ValueError("Variable not in assumptions")
+
+        # -------- отрицание --------
+        if f.root == '~':
+            phi = f.first
+
+            # если формула истинна в модели, доказываем phi
+            if evaluate(f, model):
+                # тогда phi ложна
+                # значит ~phi есть в предположениях
+                for i, assumption in enumerate(assumptions):
+                    if assumption == f:
+                        return i
+            else:
+                # надо доказать ~~phi
+                phi_index = prove(phi)
+
+                implication = Formula('->', phi,
+                                      Formula('~', Formula('~', phi)))
+                lines.append(Proof.Line(implication, NN, []))
+
+                lines.append(Proof.Line(
+                    Formula('~', Formula('~', phi)),
+                    MP,
+                    (phi_index, len(lines) - 1)
+                ))
+
+                return len(lines) - 1
+
+        # -------- импликация --------
+        if f.root == '->':
+            phi = f.first
+            psi = f.second
+
+            if evaluate(f, model):
+                # импликация истинна
+
+                if evaluate(psi, model):
+                    psi_index = prove(psi)
+
+                    implication = Formula('->', psi,
+                                          Formula('->', phi, psi))
+                    lines.append(Proof.Line(implication, I1, []))
+
+                    lines.append(Proof.Line(
+                        Formula('->', phi, psi),
+                        MP,
+                        (psi_index, len(lines) - 1)
+                    ))
+
+                    return len(lines) - 1
+
+                else:
+                    # тогда phi ложна
+                    not_phi = Formula('~', phi)
+                    not_phi_index = prove(not_phi)
+
+                    implication = Formula('->', not_phi,
+                                          Formula('->', phi, psi))
+                    lines.append(Proof.Line(implication, I2, []))
+
+                    lines.append(Proof.Line(
+                        Formula('->', phi, psi),
+                        MP,
+                        (not_phi_index, len(lines) - 1)
+                    ))
+
+                    return len(lines) - 1
+
+            else:
+                # импликация ложна → phi истинна и psi ложна
+                phi_index = prove(phi)
+                not_psi = Formula('~', psi)
+                not_psi_index = prove(not_psi)
+
+                # используем аксиому NI:
+                # phi -> (~psi -> ~(phi->psi))
+                ni_formula = Formula('->', phi,
+                                     Formula('->', not_psi,
+                                             Formula('~', f)))
+                lines.append(Proof.Line(ni_formula, NI, []))
+
+                lines.append(Proof.Line(
+                    Formula('->', not_psi, Formula('~', f)),
+                    MP,
+                    (phi_index, len(lines) - 1)
+                ))
+
+                lines.append(Proof.Line(
+                    Formula('~', f),
+                    MP,
+                    (not_psi_index, len(lines) - 1)
+                ))
+
+                return len(lines) - 1
+
+        raise ValueError("Unsupported formula")
+
+    # если формула истинна — доказываем её
+    if evaluate(formula, model):
+        prove(formula)
+        conclusion = formula
+    else:
+        neg = Formula('~', formula)
+        prove(neg)
+        conclusion = neg
+
+    statement = InferenceRule(tuple(assumptions), conclusion)
+    return Proof(statement, AXIOMATIC_SYSTEM, lines)
+
 
 def reduce_assumption(proof_from_affirmation: Proof,
                       proof_from_negation: Proof) -> Proof:

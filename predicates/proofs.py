@@ -1,22 +1,10 @@
-# This file is part of the materials accompanying the book
-# "Mathematical Logic through Python" by Gonczarowski and Nisan,
-# Cambridge University Press. Book site: www.LogicThruPython.org
-# (c) Yannai A. Gonczarowski and Noam Nisan, 2017-2025
-# File name: predicates/proofs.py
 
 """Schemas and proofs in Predicate Logic."""
-
 from __future__ import annotations
 from typing import AbstractSet, FrozenSet, Mapping, Sequence, Tuple, Union
-
 from logic_utils import frozen, frozendict
-
 from propositions.semantics import is_tautology as is_propositional_tautology
-
 from predicates.syntax import *
-
-#: A mapping from constant names, variable names, and relation names to
-#: terms, variable names, and formulas respectively.
 InstantiationMap = Mapping[str, Union[Term, str, Formula]]
 
 @frozen
@@ -240,7 +228,85 @@ class Schema:
             assert is_relation(relation)
         for variable in bound_variables:
             assert is_variable(variable)
-        # Task 9.3
+        if is_equality(formula.root) or is_relation(formula.root):
+            new_args = []
+            for arg in formula.arguments:
+                new_arg = arg.substitute(constants_and_variables_instantiation_map, frozenset())
+                new_args.append(new_arg)
+            
+            if is_relation(formula.root) and formula.root in relations_instantiation_map:
+                rel_formula = relations_instantiation_map[formula.root]
+                if len(formula.arguments) == 0:
+                    for var in rel_formula.free_variables():
+                        if var in bound_variables:
+                            raise Schema.BoundVariableError(var, formula.root)
+                    return rel_formula
+                elif len(formula.arguments) == 1:
+                    arg_term = new_args[0]
+                    rel_bound_vars = set()
+                    def collect_bound_vars(f):
+                        if is_quantifier(f.root):
+                            rel_bound_vars.add(f.variable)
+                            collect_bound_vars(f.statement)
+                        elif is_unary(f.root):
+                            collect_bound_vars(f.first)
+                        elif is_binary(f.root):
+                            collect_bound_vars(f.first)
+                            collect_bound_vars(f.second)
+                    collect_bound_vars(rel_formula)
+                    
+                    for var in arg_term.variables():
+                        if var in rel_bound_vars:
+                            raise Schema.BoundVariableError(var, formula.root)
+                    substitution_map = {'_': arg_term}
+                    substituted_rel = rel_formula.substitute(substitution_map, frozenset())
+                    
+                    return substituted_rel
+                else:
+                    return Formula(formula.root, new_args)
+            else:
+                return Formula(formula.root, new_args)
+        
+    
+        elif is_unary(formula.root):
+            new_first = Schema._instantiate_helper(
+                formula.first,
+                constants_and_variables_instantiation_map,
+                relations_instantiation_map,
+                bound_variables
+            )
+            return Formula(formula.root, new_first)
+        
+       
+        elif is_binary(formula.root):
+            new_first = Schema._instantiate_helper(
+                formula.first,
+                constants_and_variables_instantiation_map,
+                relations_instantiation_map,
+                bound_variables
+            )
+            new_second = Schema._instantiate_helper(
+                formula.second,
+                constants_and_variables_instantiation_map,
+                relations_instantiation_map,
+                bound_variables
+            )
+            return Formula(formula.root, new_first, new_second)
+        
+                
+        else: 
+            
+            new_bound = set(bound_variables)
+            new_bound.add(formula.variable)
+            
+            new_statement = Schema._instantiate_helper(
+                formula.statement,
+                constants_and_variables_instantiation_map,
+                relations_instantiation_map,
+                frozenset(new_bound)
+            )
+            
+            return Formula(formula.root, formula.variable, new_statement)
 
     def instantiate(self, instantiation_map: InstantiationMap) -> \
             Union[Formula, None]:
@@ -354,7 +420,6 @@ class Schema:
             else:
                 assert is_relation(construct)
                 assert isinstance(instantiation_map[construct], Formula)
-        # Task 9.4
 
 @frozen
 class Proof:
@@ -457,7 +522,6 @@ class Proof:
                 ``False`` otherwise.
             """
             assert line_number < len(lines) and lines[line_number] is self
-            # Task 9.5
     
     @frozen
     class MPLine:
@@ -522,7 +586,6 @@ class Proof:
                 current line; ``False`` otherwise.
             """
             assert line_number < len(lines) and lines[line_number] is self
-            # Task 9.6
 
     @frozen
     class UGLine:
@@ -577,7 +640,6 @@ class Proof:
                 current line and `x` is any variable name; ``False`` otherwise.
             """
             assert line_number < len(lines) and lines[line_number] is self
-            # Task 9.7
 
     @frozen
     class TautologyLine:
@@ -620,9 +682,7 @@ class Proof:
                 (predicate-logic) tautology, ``False`` otherwise.
             """
             assert line_number < len(lines) and lines[line_number] is self
-            # Task 9.9
 
-    #: An immutable proof line.
     Line = Union[AssumptionLine, MPLine, UGLine, TautologyLine]
                  
     def __repr__(self) -> str:

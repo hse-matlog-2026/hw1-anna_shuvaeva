@@ -403,69 +403,134 @@ class Proof:
         return all(valid_lines)
 
 def prove_specialization(proof: Proof, specialization: InferenceRule) -> Proof:
-    """Converts the given proof of an inference rule to a proof of the given
-    specialization of that inference rule.
-
-    Parameters:
-        proof: valid proof to convert.
-        specialization: specialization of the rule proven by the given proof.
-
-    Returns:
-        A valid proof of the given specialization via the same inference rules
-        as the given proof.
-    """
     assert proof.is_valid()
     assert specialization.is_specialization_of(proof.statement)
-    # Task 5.1
+    specialization_map = proof.statement.specialization_map(specialization)
+    new_lines = []
+    for line in proof.lines:
+    
+        new_formula = line.formula.substitute_variables(specialization_map)
+        
+        if line.rule is None:
+        
+            new_lines.append(Proof.Line(new_formula))
+        else:
+            new_lines.append(Proof.Line(
+                new_formula,
+                line.rule,
+                line.assumptions
+            ))
+    
+    return Proof(specialization, proof.rules, new_lines)
 
 def _inline_proof_once(main_proof: Proof, line_number: int,
                        lemma_proof: Proof) -> Proof:
-    """Inlines the given proof of a "lemma" inference rule into the given proof
-    that uses that "lemma" rule, eliminating the usage of (a specialization of)
-    that "lemma" rule in the specified line in the latter proof.
-
-    Parameters:
-        main_proof: valid proof to inline into.
-        line_number: number of the line in `main_proof` that should be replaced.
-        lemma_proof: valid proof of the inference rule of the specified line (an
-            allowed inference rule of `main_proof`).
-
-    Returns:
-        A valid proof obtained by replacing the specified line in `main_proof`
-        with a full (specialized) list of lines proving the formula of the
-        specified line from the lines specified as the assumptions of that line,
-        and updating justification line numbers specified throughout the proof
-        to maintain the validity of the proof. The set of allowed inference
-        rules in the returned proof is the union of the rules allowed in the two
-        given proofs, but the "lemma" rule that is used in the specified line in
-        `main_proof` is no longer used in the corresponding lines in the
-        returned proof (and thus, this "lemma" rule is used one less time in the
-        returned proof than in `main_proof`).
-    """
+    
     assert main_proof.is_valid()
     assert line_number < len(main_proof.lines)
     assert main_proof.lines[line_number].rule == lemma_proof.statement
     assert lemma_proof.is_valid()
-    # Task 5.2a
+    
+    
+    line_to_replace = main_proof.lines[line_number]
+    actual_rule = main_proof.rule_for_line(line_number)
+    if actual_rule is None:
+        raise ValueError(f"Line {line_number} is not a rule application")
+    specialized_lemma_proof = prove_specialization(lemma_proof, actual_rule)
+    
+    new_lines = []
+    new_lines.extend(main_proof.lines[:line_number])
+    lemma_to_main_map = {}
+    lemma_assumptions = []
+    for i, line in enumerate(specialized_lemma_proof.lines):
+        if line.rule is None:
+            lemma_assumptions.append(i)
+    
+    for lemma_idx in lemma_assumptions:
+        lemma_formula = specialized_lemma_proof.lines[lemma_idx].formula
+        found = False
+    
+        for main_idx in line_to_replace.assumptions:
+            if main_proof.lines[main_idx].formula == lemma_formula:
+                lemma_to_main_map[lemma_idx] = main_idx
+                found = True
+                break
+        
+        if not found:
+            for i in range(line_number):
+                if main_proof.lines[i].formula == lemma_formula:
+                    lemma_to_main_map[lemma_idx] = i
+                    found = True
+                    break
+    
+    
+    lemma_rule_lines_added = 0
+    
+    for i, lemma_line in enumerate(specialized_lemma_proof.lines):
+        if lemma_line.rule is not None:
+            
+            new_assumptions = []
+            for a in lemma_line.assumptions:
+                if a in lemma_to_main_map:
+                    new_assumptions.append(lemma_to_main_map[a])
+                else:
+                    rule_lines_before = 0
+                    for k in range(a):
+                        if specialized_lemma_proof.lines[k].rule is not None:
+                            rule_lines_before += 1
+                    
+                    position = line_number + rule_lines_before
+                    new_assumptions.append(position)
+            
+            new_lines.append(Proof.Line(
+                lemma_line.formula,
+                lemma_line.rule,
+                tuple(new_assumptions)
+            ))
+            
+            lemma_to_main_map[i] = len(new_lines) - 1
+            lemma_rule_lines_added += 1
+    
 
+    offset = lemma_rule_lines_added - 1
+    
+    for i in range(line_number + 1, len(main_proof.lines)):
+        old_line = main_proof.lines[i]
+        if old_line.rule is None:
+            new_lines.append(old_line)
+        else:
+            new_assumptions = []
+            for a in old_line.assumptions:
+                if a == line_number:
+                    new_assumptions.append(line_number + lemma_rule_lines_added - 1)
+                elif a > line_number:
+                    new_assumptions.append(a + offset)
+                else:
+                    new_assumptions.append(a)
+            
+            new_lines.append(Proof.Line(
+                old_line.formula,
+                old_line.rule,
+                tuple(new_assumptions)
+            ))
+
+    new_rules = main_proof.rules.union(lemma_proof.rules)
+    
+    return Proof(main_proof.statement, new_rules, new_lines)
+    
 def inline_proof(main_proof: Proof, lemma_proof: Proof) -> Proof:
-    """Inlines the given proof of a "lemma" inference rule into the given proof
-    that uses that "lemma" rule, eliminating all usages of (any specializations
-    of) that "lemma" rule in the latter proof.
-
-    Parameters:
-        main_proof: valid proof to inline into.
-        lemma_proof: valid proof of one of the allowed inference rules of
-            `main_proof`.
-
-    Returns:
-        A valid proof obtained from `main_proof` by inlining (an appropriate
-        specialization of) `lemma_proof` in lieu of each line that specifies the
-        "lemma" inference rule proved by `lemma_proof` as its justification. The
-        set of allowed inference rules in the returned proof is the union of the
-        rules allowed in the two given proofs but without the "lemma" rule
-        proved by `lemma_proof`.
-    """
     assert main_proof.is_valid()
     assert lemma_proof.is_valid()
-    # Task 5.2b
+    proof = main_proof
+    lines_with_lemma = []
+    for i, line in enumerate(proof.lines):
+        if line.rule == lemma_proof.statement:
+            lines_with_lemma.append(i)
+    
+    lines_with_lemma.sort(reverse=True)
+    
+    for line_number in lines_with_lemma:
+        proof = _inline_proof_once(proof, line_number, lemma_proof)
+    new_rules = proof.rules.union(lemma_proof.rules) - {lemma_proof.statement}
+    
+    return Proof(proof.statement, new_rules, proof.lines)
