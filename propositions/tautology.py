@@ -53,9 +53,6 @@ def formulas_capturing_model(model: Model) -> List[Formula]:
         [p1, ~p2, q]
     """
     assert is_model(model)
-    # Task 6.1a
-    
-    # Получаем отсортированные по алфавиту переменные
     variables = sorted(model.keys())
     
     formulas = []
@@ -66,7 +63,7 @@ def formulas_capturing_model(model: Model) -> List[Formula]:
             formulas.append(Formula('~', Formula(var)))
     
     return formulas
-    # Task 6.1a
+   
 
 def prove_in_model(formula: Formula, model: Model) -> Proof:
     assert formula.operators().issubset({'->', '~'})
@@ -75,31 +72,29 @@ def prove_in_model(formula: Formula, model: Model) -> Proof:
     assumptions = list(formulas_capturing_model(model))
     lines = []
 
-    # добавляем предположения
+   
     for assumption in assumptions:
         lines.append(Proof.Line(assumption))
 
     def prove(f: Formula) -> int:
-        # -------- переменная --------
+      
         if is_variable(f.root):
             for i, assumption in enumerate(assumptions):
                 if assumption == f:
                     return i
             raise ValueError("Variable not in assumptions")
 
-        # -------- отрицание --------
         if f.root == '~':
             phi = f.first
 
-            # если формула истинна в модели, доказываем phi
+            
             if evaluate(f, model):
-                # тогда phi ложна
-                # значит ~phi есть в предположениях
+        
                 for i, assumption in enumerate(assumptions):
                     if assumption == f:
                         return i
             else:
-                # надо доказать ~~phi
+                
                 phi_index = prove(phi)
 
                 implication = Formula('->', phi,
@@ -114,13 +109,13 @@ def prove_in_model(formula: Formula, model: Model) -> Proof:
 
                 return len(lines) - 1
 
-        # -------- импликация --------
+       
         if f.root == '->':
             phi = f.first
             psi = f.second
 
             if evaluate(f, model):
-                # импликация истинна
+               
 
                 if evaluate(psi, model):
                     psi_index = prove(psi)
@@ -138,7 +133,7 @@ def prove_in_model(formula: Formula, model: Model) -> Proof:
                     return len(lines) - 1
 
                 else:
-                    # тогда phi ложна
+                   
                     not_phi = Formula('~', phi)
                     not_phi_index = prove(not_phi)
 
@@ -155,13 +150,12 @@ def prove_in_model(formula: Formula, model: Model) -> Proof:
                     return len(lines) - 1
 
             else:
-                # импликация ложна → phi истинна и psi ложна
+               
                 phi_index = prove(phi)
                 not_psi = Formula('~', psi)
                 not_psi_index = prove(not_psi)
 
-                # используем аксиому NI:
-                # phi -> (~psi -> ~(phi->psi))
+    
                 ni_formula = Formula('->', phi,
                                      Formula('->', not_psi,
                                              Formula('~', f)))
@@ -182,8 +176,6 @@ def prove_in_model(formula: Formula, model: Model) -> Proof:
                 return len(lines) - 1
 
         raise ValueError("Unsupported formula")
-
-    # если формула истинна — доказываем её
     if evaluate(formula, model):
         prove(formula)
         conclusion = formula
